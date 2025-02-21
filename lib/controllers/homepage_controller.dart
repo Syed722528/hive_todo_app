@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:hive_todo_app/serivces/hive_service.dart';
 import 'package:intl/intl.dart';
 
 import '../models/task.dart';
@@ -28,37 +29,29 @@ class HomepageController extends GetxController {
   }
 
   //-----------Total tasks, completed tasks and percentage-----------//
-  late Box<Task> taskBox;
-
-  List<Task> get allTasks => taskBox.values.toList();
-  List<Task> get completedTasks =>
-      taskBox.values.where((task) => task.isCompleted).toList();
-  List<Task> get pendingTasks =>
-      taskBox.values.where((task) => !task.isCompleted).toList();
-
-  double get completionPercentage => (completedTasks.length / allTasks.length)*100;
-  void addTask(Task task) {
-    taskBox.add(task);
-    update();
-  }
-
-  void removeTask(int index) {
-    taskBox.deleteAt(index);
-    update();
-  }
-
-  void toggleTask(int index) {
-    Task task = taskBox.getAt(index)!;
-    task.isCompleted = !task.isCompleted;
-    taskBox.putAt(index, task);
-    update();
-  }
-
+  RxList<Task>? allTasks = <Task>[].obs;
+  RxList<Task>? completedTasks = <Task>[].obs;
+  RxList<Task>? pendingTasks = <Task>[].obs;
+  RxInt numberOfAllTasks = 0.obs;
+  RxInt numbeeOfAllCompletedTasks = 0.obs;
   @override
   void onInit() {
     super.onInit();
     greeting.value = getGreeting();
     formattedDate.value = getFormattedDate();
-    taskBox = Hive.box<Task>('tasks');
+    loadTasks();
+
+    Hive.box<Task>('tasks').watch().listen((event) {
+      loadTasks(); // Reload tasks when a change occurs
+    });
+  }
+
+  void loadTasks() {
+    allTasks?.assignAll(HiveService.getAllTasks() ?? []);
+    pendingTasks?.assignAll(HiveService.getAllPendingTasks() ?? []);
+    completedTasks?.assignAll(HiveService.getAllCompletedTasks() ?? []);
+
+    numberOfAllTasks.value = allTasks?.length ?? 0;
+    numbeeOfAllCompletedTasks.value = completedTasks?.length ?? 0;
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hive_todo_app/pages/add_task_page.dart';
+import 'package:hive_todo_app/serivces/hive_service.dart';
 
 import '../controllers/homepage_controller.dart';
 import '../utils/app_colors.dart';
@@ -10,9 +12,12 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(HomepageController());
+    controller.loadTasks();
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          Get.to(() => AddTaskPage());
+        },
         backgroundColor: AppColors.blueColor,
         foregroundColor: AppColors.whiteColor,
         child: Icon(Icons.add),
@@ -23,166 +28,22 @@ class HomePage extends StatelessWidget {
           child: SingleChildScrollView(
             scrollDirection: Axis.vertical,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildTopBar(controller),
-                _buildStatusBox(controller, context),
-                _buildOngoingTasks(context),
-                buildCompletedTasks(context,),
+                buildTopBar(context, controller),
+                buildStatusContainer(context, controller),
+
+                buildOngoingTiles(context, controller),
+                buildCompletedTiles(context, controller),
               ],
             ),
           ),
         ),
       ),
-
-
-    );
-    
-  }
-
-
-  Column buildCompletedTasks(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Completed',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
-        ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: List.generate(, (index) {
-            return ListTile(
-              titleTextStyle: TextStyle(
-                color: AppColors.blackColor,
-                fontSize: 17,
-                decoration: TextDecoration.lineThrough,
-                fontWeight: FontWeight.w600,
-              ),
-              subtitleTextStyle: Theme.of(context).textTheme.displaySmall,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(5),
-              ),
-              trailing: IconButton(
-                onPressed: () {
-                  Get.dialog(Container(), useSafeArea: true);
-                },
-                icon: Icon(Icons.edit),
-              ),
-              title: Text('Create Wireframe'),
-              subtitle: Text('Today'),
-              leading: Checkbox(value: true, onChanged: (value) {}),
-            );
-          }),
-        ),
-      ],
     );
   }
 
-  Column _buildOngoingTasks(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Ongoing',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
-        ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: List.generate(2, (index) {
-            return ListTile(
-              title: Text(
-                'Create Wireframe',
-                style: TextStyle(
-                  color: AppColors.blackColor,
-                  fontSize: 17,
-
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              subtitle: Text(
-                'Today',
-                style: Theme.of(context).textTheme.displaySmall,
-              ),
-              leading: Checkbox(
-                value: false,
-                onChanged: (value) {},
-
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(5),
-                ),
-              ),
-            );
-          }),
-        ),
-      ],
-    );
-  }
-
-  Container _buildStatusBox(
-    HomepageController controller,
-    BuildContext context,
-  ) {
-    return Container(
-      height: Get.height * 0.40,
-      width: Get.width * 0.87,
-      margin: EdgeInsets.symmetric(vertical: 13),
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.blackColor,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: 5,
-            children: [
-              Text(
-                controller.formattedDate.value,
-                style: Theme.of(context).textTheme.displaySmall,
-              ),
-              Text(
-                "Today's progress",
-                style: Theme.of(context).textTheme.displayMedium,
-              ),
-            ],
-          ),
-          Obx(() {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${controller.completedTasks}/${controller.allTasks} Tasks',
-                  style: Theme.of(context).textTheme.displaySmall,
-                ),
-                Text(
-                  '${controller.completionPercentage.toStringAsFixed(1)} %',
-                  style: Theme.of(context).textTheme.displayLarge,
-                ),
-                Container(
-                  height: 20,
-                  color: AppColors.whiteColor,
-                  width: double.infinity,
-                  child: Stack(
-                    children: [
-                      FractionallySizedBox(
-                        widthFactor: (controller.completionPercentage) / 100,
-                        child: Container(color: AppColors.blueColor),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Row _buildTopBar(HomepageController controller) {
+  Widget buildTopBar(BuildContext context, HomepageController controller) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -237,6 +98,229 @@ class HomePage extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  Widget buildStatusContainer(
+    BuildContext context,
+    HomepageController controller,
+  ) {
+    return Container(
+      height: Get.height * 0.40,
+      width: Get.width * 0.87,
+      margin: EdgeInsets.symmetric(vertical: 13),
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.blackColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 5,
+            children: [
+              Text(
+                controller.formattedDate.value,
+                style: Theme.of(context).textTheme.displaySmall,
+              ),
+              Text(
+                "Today's progress",
+                style: Theme.of(context).textTheme.displayMedium,
+              ),
+            ],
+          ),
+          Obx(() {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${controller.numbeeOfAllCompletedTasks}/${controller.numberOfAllTasks} Tasks',
+                  style: Theme.of(context).textTheme.displaySmall,
+                ),
+                Text(
+                  '${controller.numberOfAllTasks.value == 0 ? "0.0" : ((controller.numbeeOfAllCompletedTasks.value / controller.numberOfAllTasks.value) * 100).toStringAsFixed(1)} %',
+                  style: Theme.of(context).textTheme.displayLarge,
+                ),
+                Container(
+                  height: 20,
+                  color: AppColors.whiteColor,
+                  width: double.infinity,
+                  child: Stack(
+                    children: [
+                      FractionallySizedBox(
+                        widthFactor:
+                            controller.numberOfAllTasks.value == 0
+                                ? 0.0
+                                : (controller.numbeeOfAllCompletedTasks.value /
+                                    controller.numberOfAllTasks.value),
+                        child: Container(color: AppColors.blueColor),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget buildOngoingTiles(
+    BuildContext context,
+    HomepageController controller,
+  ) {
+    return Obx(() {
+      return Column(
+        spacing: 10,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Ongoing',
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+          ),
+          controller.pendingTasks!.isNotEmpty
+              ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: List.generate(controller.pendingTasks!.length, (
+                  index,
+                ) {
+                  return ListTile(
+                    title: Text(
+                      controller.pendingTasks![index].title,
+                      style: TextStyle(
+                        color: AppColors.blackColor,
+                        fontSize: 17,
+
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: Text(
+                      controller.pendingTasks![index].description,
+                      style: Theme.of(context).textTheme.displaySmall,
+                    ),
+                    trailing: IconButton(
+                      onPressed: () => showTaskDialog(index, context),
+                      icon: Icon(Icons.edit),
+                    ),
+                    leading: Checkbox(
+                      activeColor: AppColors.blueColor,
+                      value: false,
+                      onChanged: (value) {
+                        HiveService.toggleStatus(index);
+                      },
+
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                    ),
+                  );
+                }),
+              )
+              : Text(
+                'No task pending',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+        ],
+      );
+    });
+  }
+
+  Widget buildCompletedTiles(
+    BuildContext context,
+    HomepageController controller,
+  ) {
+    return Obx(() {
+      return Column(
+        spacing: 10,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Completed',
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+          ),
+          controller.completedTasks!.isNotEmpty
+              ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: List.generate(controller.completedTasks!.length, (
+                  index,
+                ) {
+                  return ListTile(
+                    titleTextStyle: TextStyle(
+                      color: AppColors.blackColor,
+                      fontSize: 17,
+                      decoration: TextDecoration.lineThrough,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    subtitleTextStyle: Theme.of(context).textTheme.displaySmall,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    trailing: IconButton(
+                      onPressed: () => showTaskDialog(index, context),
+                      icon: Icon(Icons.edit),
+                    ),
+                    title: Text(controller.completedTasks![index].title),
+                    subtitle: Text(
+                      controller.completedTasks![index].description,
+                    ),
+                    leading: Checkbox(
+                      value: true,
+                      onChanged: (value) {},
+                      activeColor: AppColors.blueColor,
+                    ),
+                  );
+                }),
+              )
+              : Text(
+                'No tasks completed',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+        ],
+      );
+    });
+  }
+
+  void showTaskDialog(int index, BuildContext context) {
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: AppColors.blackColor,
+
+        title: const Text(
+          'Task Options',
+          style: TextStyle(color: AppColors.whiteColor),
+        ),
+        content: Text(
+          'What would you like to do with this task?',
+          style: Theme.of(context).textTheme.displaySmall,
+        ),
+        actions: [
+          TextButton(
+            style: ElevatedButton.styleFrom(
+              foregroundColor: AppColors.whiteColor,
+            ),
+            onPressed: () {
+              HiveService.removeTask(index); // Delete task
+              Get.back(); // Close dialog
+            },
+            child: const Text('Delete'),
+          ),
+          TextButton(
+            style: ElevatedButton.styleFrom(
+              foregroundColor: AppColors.whiteColor,
+            ),
+
+            onPressed: () {
+              HiveService.toggleStatus(index); // Toggle task status
+              Get.back(); // Close dialog
+            },
+            child: const Text('Change Status'),
+          ),
+        ],
+      ),
     );
   }
 }
