@@ -188,31 +188,33 @@ class HomePage extends StatelessWidget {
                 children: List.generate(controller.pendingTasks!.length, (
                   index,
                 ) {
+                  final task =
+                      controller.pendingTasks![index]; // Get task instance
                   return ListTile(
                     title: Text(
-                      controller.pendingTasks![index].title,
+                      task.title,
                       style: TextStyle(
                         color: AppColors.blackColor,
                         fontSize: 17,
-
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     subtitle: Text(
-                      controller.pendingTasks![index].description,
+                      task.description,
                       style: Theme.of(context).textTheme.displaySmall,
                     ),
                     trailing: IconButton(
-                      onPressed: () => showTaskDialog(index, context),
+                      onPressed:
+                          () =>
+                              showTaskDialog(task.id, context), // Pass Task ID
                       icon: Icon(Icons.edit),
                     ),
                     leading: Checkbox(
                       activeColor: AppColors.blueColor,
-                      value: false,
+                      value: task.isCompleted, // Reflect correct task status
                       onChanged: (value) {
-                        HiveService.toggleStatus(index);
+                        HiveService.toggleStatus(task.id); // Toggle by ID
                       },
-
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(5),
                       ),
@@ -248,6 +250,8 @@ class HomePage extends StatelessWidget {
                 children: List.generate(controller.completedTasks!.length, (
                   index,
                 ) {
+                  final task =
+                      controller.completedTasks![index]; // Get task instance
                   return ListTile(
                     titleTextStyle: TextStyle(
                       color: AppColors.blackColor,
@@ -260,16 +264,19 @@ class HomePage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(5),
                     ),
                     trailing: IconButton(
-                      onPressed: () => showTaskDialog(index, context),
+                      onPressed:
+                          () => showTaskDialog(task.id, context), // Use Task ID
                       icon: Icon(Icons.edit),
                     ),
-                    title: Text(controller.completedTasks![index].title),
-                    subtitle: Text(
-                      controller.completedTasks![index].description,
-                    ),
+                    title: Text(task.title),
+                    subtitle: Text(task.description),
                     leading: Checkbox(
-                      value: true,
-                      onChanged: (value) {},
+                      value: task.isCompleted, // Ensure correct state
+                      onChanged: (value) {
+                        HiveService.toggleStatus(
+                          task.id,
+                        ); // Toggle using Task ID
+                      },
                       activeColor: AppColors.blueColor,
                     ),
                   );
@@ -284,11 +291,10 @@ class HomePage extends StatelessWidget {
     });
   }
 
-  void showTaskDialog(int index, BuildContext context) {
+  void showTaskDialog(String taskId, BuildContext context) {
     Get.dialog(
       AlertDialog(
         backgroundColor: AppColors.blackColor,
-
         title: const Text(
           'Task Options',
           style: TextStyle(color: AppColors.whiteColor),
@@ -303,7 +309,7 @@ class HomePage extends StatelessWidget {
               foregroundColor: AppColors.whiteColor,
             ),
             onPressed: () {
-              HiveService.removeTask(index); // Delete task
+              HiveService.removeTask(taskId); // Delete task by ID
               Get.back(); // Close dialog
             },
             child: const Text('Delete'),
@@ -312,9 +318,8 @@ class HomePage extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               foregroundColor: AppColors.whiteColor,
             ),
-
             onPressed: () {
-              HiveService.toggleStatus(index); // Toggle task status
+              HiveService.toggleStatus(taskId); // Toggle task status by ID
               Get.back(); // Close dialog
             },
             child: const Text('Change Status'),

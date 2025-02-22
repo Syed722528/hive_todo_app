@@ -39,6 +39,7 @@ dependencies:
   get:
   intl: ^0.20.2
   lottie:
+  uuid: ^4.5.1
 
 dev_dependencies:
   flutter_test:
