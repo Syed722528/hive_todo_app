@@ -1,16 +1,47 @@
-# hive_todo_app
+Here's your README file:  
 
-A new Flutter project.
+---
 
-## Getting Started
+# 📝 Hive To-Do App  
 
-This project is a starting point for a Flutter application.
+A simple yet efficient **To-Do App** built using **Hive** for local storage, **GetX** for state management, and **Lottie** for smooth animations. 🚀  
 
-A few resources to get you started if this is your first Flutter project:
+## 📌 Features  
+✅ Save, delete, and update tasks  
+✅ Filter tasks based on priority  
+✅ Animated UI with **Lottie**  
+✅ Track task completion progress  
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 🛠️ Tech Stack  
+- **Flutter** 💙  
+- **Hive** (Local Database) 🗂  
+- **GetX** (State Management) ⚡  
+- **Lottie** (Animations) 🎨  
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 📸 Screenshots  
+![App Sample Image](SampleImage.png)
+
+
+
+## 📥 Installation  
+1. Clone the repository:  
+   ```bash
+   git clone https://github.com/Syed722528/hive_todo_app.git
+   ```
+2. Navigate to the project directory:  
+   ```bash
+   cd hive_todo_app
+   ```
+3. Install dependencies:  
+   ```bash
+   flutter pub get
+   ```
+4. Run the app:  
+   ```bash
+   flutter run
+   ```  
+
+## 📧 Contact  
+If you have any questions or suggestions, feel free to reach out! 🚀  
+
+---  
