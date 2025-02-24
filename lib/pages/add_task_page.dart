@@ -1,28 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:hive_todo_app/serivces/hive_service.dart';
+import 'package:hive_todo_app/models/task.dart';
 import 'package:hive_todo_app/utils/app_colors.dart';
 import 'package:lottie/lottie.dart';
 
-import '../models/task.dart';
+import '../controllers/add_task_controlller.dart';
 
-class AddTaskPage extends StatefulWidget {
-  // Changed to StatefulWidget for managing state
+class AddTaskPage extends StatelessWidget {
   const AddTaskPage({super.key});
-
-  @override
-  AddTaskPageState createState() => AddTaskPageState();
-}
-
-class AddTaskPageState extends State<AddTaskPage> {
-  final formKey = GlobalKey<FormState>();
-  final title = TextEditingController();
-  final description = TextEditingController();
-  Priority selectedPriority = Priority.high; // Default priority
-  DateTime? selectedDueDate; // Store the picked due date
-
   @override
   Widget build(BuildContext context) {
+    final controller = Get.put(AddTaskController());
+
     return Scaffold(
       appBar: AppBar(
         foregroundColor: AppColors.blackColor,
@@ -43,87 +32,40 @@ class AddTaskPageState extends State<AddTaskPage> {
             borderRadius: BorderRadius.circular(15),
           ),
           child: Form(
-            key: formKey,
+            key: controller.formKey,
             child: Column(
-              spacing: 20,
+              spacing: 10,
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                TitleField(title: title),
-                DescriptionField(description: description),
-                buildPriority(context),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Due date',
-                      style: TextStyle(color: AppColors.whiteColor),
-                    ),
-                    IconButton(
-                      onPressed: () async {
-                        DateTime? picked = await showDatePicker(
-                          context: context,
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime(2026),
-                          builder: (context, child) {
-                            return Theme(
-                              data: Theme.of(context).copyWith(
-                                textTheme: const TextTheme(
-                                  headlineMedium: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue,
-                                  ),
-                                  bodyLarge: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                datePickerTheme: DatePickerThemeData(
-                                  backgroundColor: AppColors.whiteColor,
-                                ),
-                              ),
-                              child: child!,
-                            );
-                          },
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            selectedDueDate = picked;
-                          });
-                        }
-                      },
-                      icon: const Icon(
-                        Icons.calendar_month,
-                        color: AppColors.whiteColor,
-                      ),
-                    ),
-                  ],
+                _buildTextField(
+                  controller.title,
+                  'Title',
+                  maxLines: 1,
+                  controller: controller,
                 ),
-                if (selectedDueDate != null) // Display selected due date
-                  Text(
-                    'Due: ${selectedDueDate!.toString().split(' ')[0]}', // Show only date part
-                    style: const TextStyle(
-                      color: AppColors.whiteColor,
-                      fontSize: 15,
-                    ),
-                  ),
+                _buildTextField(
+                  controller.description,
+                  'Description',
+                  maxLines: 3,
+                  controller: controller,
+                ),
+                _buildPriorityDropdown(controller),
+                _buildDatePicker(context, controller),
+                Obx(
+                  () =>
+                      controller.selectedDueDate.value != null
+                          ? Text(
+                            'Due: ${controller.selectedDueDate.value!.toString().split(' ')[0]}',
+                            style: const TextStyle(
+                              color: AppColors.whiteColor,
+                              fontSize: 15,
+                            ),
+                          )
+                          : const SizedBox.shrink(),
+                ),
                 ElevatedButton(
-                  onPressed: () {
-                    if (formKey.currentState!.validate()) {
-                      Task task = Task(
-                        title: title.text,
-                        description: description.text,
-                        isCompleted: false,
-                        priority: selectedPriority, // Use selected priority
-                        createdDate: DateTime.now(), // Auto-set creation date
-                        dueDate: selectedDueDate, // Use picked due date
-                      );
-                      HiveService.addTask(task);
-                      Get.back();
-                    }
-                  },
+                  onPressed: controller.addTask,
                   style: ElevatedButton.styleFrom(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -141,112 +83,94 @@ class AddTaskPageState extends State<AddTaskPage> {
     );
   }
 
-  Row buildPriority(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Text('Priority', style: TextStyle(color: AppColors.whiteColor)),
-        DropdownButton<Priority>(
-          value: selectedPriority,
+  Widget _buildTextField(
+    TextEditingController textController,
+    String hint, {
+    required int maxLines,
+    required AddTaskController controller,
+  }) => TextFormField(
+    controller: textController,
+    minLines: maxLines,
+    maxLines: maxLines,
+    decoration: InputDecoration(
+      fillColor: AppColors.whiteColor,
+      filled: true,
+      contentPadding: const EdgeInsets.all(10),
+      hintText: hint,
+      hintStyle: TextStyle(color: AppColors.blackColor, fontSize: 15),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+    ),
+    style: const TextStyle(color: AppColors.blackColor, fontSize: 17),
+    validator: (value) => controller.validateField(value, hint),
+  );
 
-          onChanged: (Priority? newValue) {
-            setState(() {
-              selectedPriority = newValue!;
-            });
-          },
+  Widget _buildPriorityDropdown(AddTaskController controller) => Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      const Text('Priority', style: TextStyle(color: AppColors.whiteColor)),
+      Obx(
+        () => DropdownButton<Priority>(
+          value: controller.selectedPriority.value,
+          onChanged: controller.setPriority,
           items:
-              Priority.values.map((Priority priority) {
-                return DropdownMenuItem<Priority>(
-                  value: priority,
-                  child: Text(
-                    StringExtension(
-                      priority.name,
-                    ).capitalize(), // Capitalize for display
-                    style: TextStyle(color: AppColors.whiteColor, fontSize: 20),
-                  ),
-                );
-              }).toList(),
+              Priority.values
+                  .map(
+                    (priority) => DropdownMenuItem<Priority>(
+                      value: priority,
+                      child: Text(
+                        priority.name[0].toUpperCase() +
+                            priority.name.substring(1),
+                        style: TextStyle(
+                          color: AppColors.whiteColor,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
           dropdownColor: AppColors.greyColor,
           style: const TextStyle(color: AppColors.whiteColor),
         ),
-      ],
-    );
-  }
-}
-
-class DescriptionField extends StatelessWidget {
-  const DescriptionField({super.key, required this.description});
-
-  final TextEditingController description;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: description,
-      minLines: 3,
-      maxLines: 3,
-      decoration: InputDecoration(
-        fillColor: AppColors.whiteColor,
-        filled: true,
-        contentPadding: const EdgeInsets.all(10),
-        hintText: 'Description',
-        hintStyle: TextStyle(
-          color: AppColors.blackColor,
-          fontSize: 15,
-          fontWeight: FontWeight.normal,
-        ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
-      style: const TextStyle(color: AppColors.blackColor, fontSize: 17),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          // Improved validation
-          return 'Description is required';
-        }
-        return null;
-      },
-    );
-  }
-}
+    ],
+  );
 
-class TitleField extends StatelessWidget {
-  const TitleField({super.key, required this.title});
-
-  final TextEditingController title;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      style: const TextStyle(color: AppColors.blackColor, fontSize: 17),
-      controller: title,
-      minLines: 1,
-      maxLines: 1,
-      decoration: InputDecoration(
-        hintText: 'Title',
-        hintStyle: TextStyle(
-          color: AppColors.blackColor,
-          fontSize: 15,
-          fontWeight: FontWeight.normal,
-        ),
-
-        fillColor: AppColors.whiteColor,
-        filled: true,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          // Improved validation
-          return 'Title is required';
-        }
-        return null;
-      },
-    );
-  }
-}
-
-// Extension to capitalize the first letter
-extension StringExtension on String {
-  String capitalize() {
-    return "${this[0].toUpperCase()}${substring(1)}";
-  }
+  Widget _buildDatePicker(BuildContext context, AddTaskController controller) =>
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('Due date', style: TextStyle(color: AppColors.whiteColor)),
+          IconButton(
+            onPressed: () async {
+              final picked = await showDatePicker(
+                context: context,
+                firstDate: DateTime.now(),
+                lastDate: DateTime(2026),
+                builder:
+                    (context, child) => Theme(
+                      data: Theme.of(context).copyWith(
+                        textTheme: const TextTheme(
+                          headlineMedium: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                          bodyLarge: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        datePickerTheme: DatePickerThemeData(
+                          backgroundColor: AppColors.whiteColor,
+                        ),
+                      ),
+                      child: child!,
+                    ),
+              );
+              controller.setDueDate(picked);
+            },
+            icon: const Icon(Icons.calendar_month, color: AppColors.whiteColor),
+          ),
+        ],
+      );
 }

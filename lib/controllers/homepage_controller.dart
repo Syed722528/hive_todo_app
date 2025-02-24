@@ -29,6 +29,9 @@ class HomepageController extends GetxController {
   }
 
   //-----------Total tasks, completed tasks and percentage-----------//
+  final selectedPriority = Priority.high.obs;
+  void setPriority(Priority? priority) =>
+      selectedPriority.value = priority ?? Priority.high;
   RxList<Task>? allTasks = <Task>[].obs;
   RxList<Task>? completedTasks = <Task>[].obs;
   RxList<Task>? pendingTasks = <Task>[].obs;
@@ -53,5 +56,11 @@ class HomepageController extends GetxController {
 
     numberOfAllTasks.value = allTasks?.length ?? 0;
     numbeeOfAllCompletedTasks.value = completedTasks?.length ?? 0;
+  }
+
+  void updateOngoingTaskBasedOnPriority(Priority priority) {
+    if (pendingTasks?.isNotEmpty ?? false) {
+      pendingTasks!.retainWhere((task) => task.priority == priority);
+    }
   }
 }

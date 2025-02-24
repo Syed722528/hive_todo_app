@@ -4,6 +4,7 @@ import 'package:hive_todo_app/pages/add_task_page.dart';
 import 'package:hive_todo_app/serivces/hive_service.dart';
 
 import '../controllers/homepage_controller.dart';
+import '../models/task.dart';
 import '../utils/app_colors.dart';
 
 class HomePage extends StatelessWidget {
@@ -178,9 +179,49 @@ class HomePage extends StatelessWidget {
         spacing: 10,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Ongoing',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Ongoing',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+
+              DropdownMenu<Priority>(
+                closeBehavior: DropdownMenuCloseBehavior.all,
+
+                menuStyle: MenuStyle(
+                  backgroundColor: WidgetStatePropertyAll(AppColors.whiteColor),
+                ),
+                enableFilter: true,
+                textStyle: TextStyle(color: AppColors.blackColor, fontSize: 15),
+                initialSelection:
+                    controller
+                        .selectedPriority
+                        .value, // Set the initial selected value
+                onSelected: (Priority? newValue) {
+                  if (newValue != null) {
+                    controller.setPriority(newValue);
+                    controller.updateOngoingTaskBasedOnPriority(newValue);
+                  }
+                },
+                dropdownMenuEntries:
+                    Priority.values
+                        .map(
+                          (priority) => DropdownMenuEntry<Priority>(
+                            value:
+                                priority, // Each entry gets its own Priority value
+                            label:
+                                priority.name[0].toUpperCase() +
+                                priority.name.substring(1),
+                          ),
+                        )
+                        .toList(),
+              ),
+            ],
           ),
           controller.pendingTasks!.isNotEmpty
               ? Column(
