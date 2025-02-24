@@ -19,7 +19,7 @@ A simple yet efficient **To-Do App** built using **Hive** for local storage, **G
 - **Lottie** (Animations) 🎨  
 
 ## 📸 Screenshots  
-![App Sample Image](SampleImage.png)
+<img src="SampleImage.png" alt="App Sample Image" width="300">
 
 
 
