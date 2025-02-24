@@ -138,11 +138,11 @@ class HomePage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${controller.numbeeOfAllCompletedTasks}/${controller.numberOfAllTasks} Tasks',
+                  '${controller.numberOfAllCompletedTasks}/${controller.numberOfAllTasks} Tasks',
                   style: Theme.of(context).textTheme.displaySmall,
                 ),
                 Text(
-                  '${controller.numberOfAllTasks.value == 0 ? "0.0" : ((controller.numbeeOfAllCompletedTasks.value / controller.numberOfAllTasks.value) * 100).toStringAsFixed(1)} %',
+                  '${controller.numberOfAllTasks.value == 0 ? "0.0" : ((controller.numberOfAllCompletedTasks.value / controller.numberOfAllTasks.value) * 100).toStringAsFixed(1)} %',
                   style: Theme.of(context).textTheme.displayLarge,
                 ),
                 Container(
@@ -155,7 +155,7 @@ class HomePage extends StatelessWidget {
                         widthFactor:
                             controller.numberOfAllTasks.value == 0
                                 ? 0.0
-                                : (controller.numbeeOfAllCompletedTasks.value /
+                                : (controller.numberOfAllCompletedTasks.value /
                                     controller.numberOfAllTasks.value),
                         child: Container(color: AppColors.blueColor),
                       ),
@@ -200,12 +200,12 @@ class HomePage extends StatelessWidget {
                 textStyle: TextStyle(color: AppColors.blackColor, fontSize: 15),
                 initialSelection:
                     controller
-                        .selectedPriority
+                        .pendingSelectedPriority
                         .value, // Set the initial selected value
                 onSelected: (Priority? newValue) {
                   if (newValue != null) {
-                    controller.setPriority(newValue);
-                    controller.updateOngoingTaskBasedOnPriority(newValue);
+                    controller.setPendingPriority(newValue);
+                    controller.updateOngoingTaskBasedOnPriority();
                   }
                 },
                 dropdownMenuEntries:
@@ -223,45 +223,49 @@ class HomePage extends StatelessWidget {
               ),
             ],
           ),
-          controller.pendingTasks!.isNotEmpty
+          controller.filteredPendingTasks!.isNotEmpty
               ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: List.generate(controller.pendingTasks!.length, (
-                  index,
-                ) {
-                  final task =
-                      controller.pendingTasks![index]; // Get task instance
-                  return ListTile(
-                    title: Text(
-                      task.title,
-                      style: TextStyle(
-                        color: AppColors.blackColor,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
+                children: List.generate(
+                  controller.filteredPendingTasks!.length,
+                  (index) {
+                    final task =
+                        controller
+                            .filteredPendingTasks![index]; // Get task instance
+                    return ListTile(
+                      title: Text(
+                        task.title,
+                        style: TextStyle(
+                          color: AppColors.blackColor,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    subtitle: Text(
-                      task.description,
-                      style: Theme.of(context).textTheme.displaySmall,
-                    ),
-                    trailing: IconButton(
-                      onPressed:
-                          () =>
-                              showTaskDialog(task.id, context), // Pass Task ID
-                      icon: Icon(Icons.edit),
-                    ),
-                    leading: Checkbox(
-                      activeColor: AppColors.blueColor,
-                      value: task.isCompleted, // Reflect correct task status
-                      onChanged: (value) {
-                        HiveService.toggleStatus(task.id); // Toggle by ID
-                      },
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(5),
+                      subtitle: Text(
+                        task.description,
+                        style: Theme.of(context).textTheme.displaySmall,
                       ),
-                    ),
-                  );
-                }),
+                      trailing: IconButton(
+                        onPressed:
+                            () => showTaskDialog(
+                              task.id,
+                              context,
+                            ), // Pass Task ID
+                        icon: Icon(Icons.edit),
+                      ),
+                      leading: Checkbox(
+                        activeColor: AppColors.blueColor,
+                        value: task.isCompleted, // Reflect correct task status
+                        onChanged: (value) {
+                          HiveService.toggleStatus(task.id); // Toggle by ID
+                        },
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               )
               : Text(
                 'No task pending',
@@ -281,47 +285,90 @@ class HomePage extends StatelessWidget {
         spacing: 10,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Completed',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Completed',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              DropdownMenu<Priority>(
+                closeBehavior: DropdownMenuCloseBehavior.all,
+
+                menuStyle: MenuStyle(
+                  backgroundColor: WidgetStatePropertyAll(AppColors.whiteColor),
+                ),
+                enableFilter: true,
+                textStyle: TextStyle(color: AppColors.blackColor, fontSize: 15),
+                initialSelection:
+                    controller
+                        .completedSelectedPriority
+                        .value, // Set the initial selected value
+                onSelected: (Priority? newValue) {
+                  if (newValue != null) {
+                    controller.setCompletedPriority(newValue);
+                    controller.updateCompletedTaskBasedOnPriority();
+                  }
+                },
+                dropdownMenuEntries:
+                    Priority.values
+                        .map(
+                          (priority) => DropdownMenuEntry<Priority>(
+                            value:
+                                priority, // Each entry gets its own Priority value
+                            label:
+                                priority.name[0].toUpperCase() +
+                                priority.name.substring(1),
+                          ),
+                        )
+                        .toList(),
+              ),
+            ],
           ),
-          controller.completedTasks!.isNotEmpty
+          controller.allCompletedTasks!.isNotEmpty
               ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: List.generate(controller.completedTasks!.length, (
-                  index,
-                ) {
-                  final task =
-                      controller.completedTasks![index]; // Get task instance
-                  return ListTile(
-                    titleTextStyle: TextStyle(
-                      color: AppColors.blackColor,
-                      fontSize: 17,
-                      decoration: TextDecoration.lineThrough,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    subtitleTextStyle: Theme.of(context).textTheme.displaySmall,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    trailing: IconButton(
-                      onPressed:
-                          () => showTaskDialog(task.id, context), // Use Task ID
-                      icon: Icon(Icons.edit),
-                    ),
-                    title: Text(task.title),
-                    subtitle: Text(task.description),
-                    leading: Checkbox(
-                      value: task.isCompleted, // Ensure correct state
-                      onChanged: (value) {
-                        HiveService.toggleStatus(
-                          task.id,
-                        ); // Toggle using Task ID
-                      },
-                      activeColor: AppColors.blueColor,
-                    ),
-                  );
-                }),
+                children: List.generate(
+                  controller.filteredCompletedTasks!.length,
+                  (index) {
+                    final task =
+                        controller
+                            .filteredCompletedTasks![index]; // Get task instance
+                    return ListTile(
+                      titleTextStyle: TextStyle(
+                        color: AppColors.blackColor,
+                        fontSize: 17,
+                        decoration: TextDecoration.lineThrough,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      subtitleTextStyle:
+                          Theme.of(context).textTheme.displaySmall,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      trailing: IconButton(
+                        onPressed:
+                            () =>
+                                showTaskDialog(task.id, context), // Use Task ID
+                        icon: Icon(Icons.edit),
+                      ),
+                      title: Text(task.title),
+                      subtitle: Text(task.description),
+                      leading: Checkbox(
+                        value: task.isCompleted, // Ensure correct state
+                        onChanged: (value) {
+                          HiveService.toggleStatus(
+                            task.id,
+                          ); // Toggle using Task ID
+                        },
+                        activeColor: AppColors.blueColor,
+                      ),
+                    );
+                  },
+                ),
               )
               : Text(
                 'No tasks completed',

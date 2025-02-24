@@ -29,14 +29,23 @@ class HomepageController extends GetxController {
   }
 
   //-----------Total tasks, completed tasks and percentage-----------//
-  final selectedPriority = Priority.high.obs;
-  void setPriority(Priority? priority) =>
-      selectedPriority.value = priority ?? Priority.high;
-  RxList<Task>? allTasks = <Task>[].obs;
-  RxList<Task>? completedTasks = <Task>[].obs;
-  RxList<Task>? pendingTasks = <Task>[].obs;
-  RxInt numberOfAllTasks = 0.obs;
-  RxInt numbeeOfAllCompletedTasks = 0.obs;
+  final completedSelectedPriority = Priority.high.obs;
+  void setCompletedPriority(Priority? priority) =>
+      completedSelectedPriority.value = priority ?? Priority.high;
+
+  final pendingSelectedPriority = Priority.high.obs;
+  void setPendingPriority(Priority? priority) =>
+      pendingSelectedPriority.value = priority ?? Priority.high;
+
+  final allTasks = <Task>[].obs;
+  final allCompletedTasks = <Task>[].obs;
+  final filteredCompletedTasks = <Task>[].obs;
+  final allPendingTasks = <Task>[].obs;
+  final filteredPendingTasks = <Task>[].obs;
+
+  final numberOfAllTasks = 0.obs;
+  final numberOfAllCompletedTasks = 0.obs; // Fixed typo
+
   @override
   void onInit() {
     super.onInit();
@@ -50,17 +59,33 @@ class HomepageController extends GetxController {
   }
 
   void loadTasks() {
-    allTasks?.assignAll(HiveService.getAllTasks() ?? []);
-    pendingTasks?.assignAll(HiveService.getAllPendingTasks() ?? []);
-    completedTasks?.assignAll(HiveService.getAllCompletedTasks() ?? []);
+    try {
+      final tasks = HiveService.getAllTasks();
+      final pending = HiveService.getAllPendingTasks();
+      final completed = HiveService.getAllCompletedTasks();
 
-    numberOfAllTasks.value = allTasks?.length ?? 0;
-    numbeeOfAllCompletedTasks.value = completedTasks?.length ?? 0;
+      allTasks.assignAll(tasks);
+      allPendingTasks.assignAll(pending);
+      allCompletedTasks.assignAll(completed);
+      filteredPendingTasks.assignAll(pending); // Fresh copy
+      filteredCompletedTasks.assignAll(completed); // Fresh copy
+
+      numberOfAllTasks.value = allTasks.length;
+      numberOfAllCompletedTasks.value = allCompletedTasks.length;
+    } catch (e) {
+      print('Error loading tasks: $e'); // Add proper error handling
+    }
   }
 
-  void updateOngoingTaskBasedOnPriority(Priority priority) {
-    if (pendingTasks?.isNotEmpty ?? false) {
-      pendingTasks!.retainWhere((task) => task.priority == priority);
-    }
+  void updateOngoingTaskBasedOnPriority() {
+    filteredPendingTasks.assignAll(
+      allPendingTasks.where((task) => task.priority == pendingSelectedPriority.value).toList(),
+    );
+  }
+
+  void updateCompletedTaskBasedOnPriority() {
+    filteredCompletedTasks.assignAll(
+      allCompletedTasks.where((task) => task.priority == completedSelectedPriority.value).toList(),
+    );
   }
 }
